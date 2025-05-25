@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.drive.opmode.autonomous.IntoTheDeep.Learn;
+package org.firstinspires.ftc.teamcode.drive.opmode.autonomous.IntoTheDeep.Competition;
 
 import androidx.annotation.NonNull;
 
