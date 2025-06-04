@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.drive.opmode.autonomous.IntoTheDeep.Learn;
+package org.firstinspires.ftc.teamcode.drive.opmode.autonomous.IntoTheDeep.Competition;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -40,7 +40,7 @@ public class blobTest extends LinearOpMode {
             @Override
             public void onOpened() {
                 // Start streaming in MJPEG format with a specified resolution
-                webcam1.startStreaming(width, height, OpenCvCameraRotation.UPRIGHT, OpenCvWebcam.StreamFormat.MJPEG);
+                webcam1.startStreaming(width, height, OpenCvCameraRotation.SIDEWAYS_RIGHT, OpenCvWebcam.StreamFormat.MJPEG);
             }
 
             @Override
