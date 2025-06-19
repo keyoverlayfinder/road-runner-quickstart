@@ -2,33 +2,229 @@ package org.firstinspires.ftc.teamcode.drive.opmode.autonomous.IntoTheDeep.Compe
 
 import androidx.annotation.NonNull;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.drive.opmode.visionIntoTheDeep.itdBlobPipeline;
+
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvWebcam;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+
+import java.util.Locale;
+
+@Config
 @Autonomous(name="BlueAuto", group="competition")
 public class specimenOpMode extends LinearOpMode {
-    private boolean pathFinished = false;
 
+    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    // lift class
+    public static class Slide {
+        private final DcMotorEx rightSlide;
+        private final DcMotorEx leftSlide;
+        public Slide(HardwareMap hardwareMap, Telemetry telemetrySlide) {
+            rightSlide = hardwareMap.get(DcMotorEx.class, "rightSlide");
+            rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            rightSlide.setDirection(DcMotorSimple.Direction.FORWARD);
+
+            leftSlide = hardwareMap.get(DcMotorEx.class, "leftSlide");
+            leftSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            leftSlide.setDirection(DcMotorSimple.Direction.REVERSE);
+        }
+
+        public class SlideUp implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    rightSlide.setPower(0.8);
+                    leftSlide.setPower(0.8);
+                    initialized = true;
+                }
+
+                double rightSlideCurrentPosition = rightSlide.getCurrentPosition();
+                double leftSlideCurrentPosition = leftSlide.getCurrentPosition();
+                packet.put("rightSlidePos", rightSlideCurrentPosition);
+                packet.put("leftSlidePos", leftSlideCurrentPosition);
+                if (rightSlideCurrentPosition < 3000.0 && leftSlideCurrentPosition < 3000) {
+                    return true;
+                } else {
+                    rightSlide.setPower(0);
+                    leftSlide.setPower(0);
+                    return false;
+                }
+
+            }
+        }
+        public Action slideUp() {
+            return new SlideUp();
+        }
+
+        public class SlideDown implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    rightSlide.setPower(-0.8);
+                    leftSlide.setPower(-0.8);
+                    initialized = true;
+                }
+
+                double slideRightCurrentPosition = rightSlide.getCurrentPosition();
+                double slideLeftCurrentPosition = leftSlide.getCurrentPosition();
+                packet.put("slideRightPos", slideRightCurrentPosition);
+                packet.put("slideLeftPos", slideLeftCurrentPosition);
+                if (slideRightCurrentPosition > 100.0 && slideLeftCurrentPosition > 100) {
+                    return true;
+                } else {
+                    rightSlide.setPower(0);
+                    leftSlide.setPower(0);
+                    return false;
+                }
+            }
+        }
+        public Action slideDown(){
+            return new SlideDown();
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    // claw class
+    public static class Claw {
+        private final Servo rightGripServo;
+        private final Servo leftGripServo;
+
+        public Claw(HardwareMap hardwareMap, Telemetry telemetryClaw) {
+            rightGripServo = hardwareMap.get(Servo.class, "rightGripServo");
+            leftGripServo = hardwareMap.get(Servo.class,"leftGripServo");
+
+            rightGripServo.setDirection(Servo.Direction.FORWARD);
+            leftGripServo.setDirection(Servo.Direction.REVERSE);
+        }
+
+        public class CloseClaw implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                rightGripServo.setPosition(0.55);
+                leftGripServo.setPosition(0.55);
+                return false;
+            }
+        }
+        public Action closeClaw() {
+            return new CloseClaw();
+        }
+
+        public class OpenClaw implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                rightGripServo.setPosition(1.0);
+                leftGripServo.setPosition(1.0);
+                return false;
+            }
+        }
+
+        public Action openClaw() {
+            return new OpenClaw();
+        }
+
+       // InitClaw makes the claw go as wide as possible so that we fit within 18 x 18 x 18 box when initialized, but avoids interference with normal game.
+        public class InitClaw implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                rightGripServo.setPosition(2.0);
+                leftGripServo.setPosition(2);
+                return false;
+            }
+        }
+        public Action initClaw() {
+            return new InitClaw();
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------
+// setting up pivot motors
+    public static class Pivot {
+        private final DcMotorEx rightPivot;
+        private final DcMotorEx leftPivot;
+        public Pivot(HardwareMap hardwareMap, Telemetry telemetryPivot) {
+            rightPivot = hardwareMap.get(DcMotorEx.class, "rightPivot");
+            leftPivot = hardwareMap.get(DcMotorEx.class,"leftPivot");
+
+            rightPivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            rightPivot.setDirection(DcMotorSimple.Direction.FORWARD);
+            leftPivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            leftPivot.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        }
+        public class InitPivot implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    rightPivot.setPower(0.8);
+                    leftPivot.setPower(0.8);
+                    initialized = true;
+                }
+
+                double rightPivotCurrentPosition = rightPivot.getCurrentPosition();
+                double leftPivotCurrentPosition = leftPivot.getCurrentPosition();
+                packet.put("rightPivotPos", rightPivotCurrentPosition);
+                packet.put("leftPivotPos", leftPivotCurrentPosition);
+                if (rightPivotCurrentPosition < 3000 && rightPivotCurrentPosition > 2000 && leftPivotCurrentPosition < 3000.0 && leftPivotCurrentPosition > 2000) {
+                    return true;
+                } else {
+                    rightPivot.setPower(0);
+                    leftPivot.setPower(0);
+                    return false;
+                }
+            }
+        }
+        public Action initPivot() {
+            return new InitPivot();
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    private boolean pathFinished = false;
+// Camera setup info
     OpenCvWebcam webcam1 = null;
-    itdBlobPipeline itdCam = new itdBlobPipeline();
+    itdBlobPipeline itdCam = new itdBlobPipeline(); // Refers to itdBlobPipeline for camera info
 
     int width = 1280, height = 720;
 
+    // -------------------------------------------------------------------------------------------------------------------------------------------------
+
     @Override
     public void runOpMode() throws InterruptedException {
+        //Set up the claw
+        Claw claw = new Claw(hardwareMap, telemetry);
+
+        //Set up the slides
+        Slide slide = new Slide(hardwareMap, telemetry);
+
+        //Set up the Pivots
+        Pivot pivot = new Pivot(hardwareMap, telemetry);
+
         // Set up the webcam
         WebcamName webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
         // The view ID is needed for displaying the camera feed in the FTC app
@@ -41,9 +237,6 @@ public class specimenOpMode extends LinearOpMode {
         // Set the camera's pipeline to the one you've created
         webcam1.setPipeline(itdCam);
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, -60, Math.toRadians(90)));
-        Claw claw = new Claw(hardwareMap);
-        Slide slide = new Slide(hardwareMap, telemetry);
-        Pivot pivot = new Pivot(hardwareMap, telemetry);
 
         Action firstStage1 = drive.actionBuilder(new Pose2d(25, -60, Math.toRadians(90)))
                 .strafeToLinearHeading(new Vector2d(40, -40), Math.toRadians(270))
@@ -58,7 +251,7 @@ public class specimenOpMode extends LinearOpMode {
         // Move forward to collect specimen from human player
 
         Action firstStage3 = drive.actionBuilder(new Pose2d(40, -40, Math.toRadians(270)))
-                .strafeToLinearHeading(new Vector2d(5, -58), Math.toRadians(90))
+                .strafeToLinearHeading(new Vector2d(5, -40), Math.toRadians(90))
                 .waitSeconds(0.1)
                 .build();
         // Return to border wall.
@@ -67,7 +260,7 @@ public class specimenOpMode extends LinearOpMode {
 
 // ------------------------------------------------------------------------------------------------------------------------------
 
-        Action secondStage1 = drive.actionBuilder(new Pose2d(5, -58, Math.toRadians(90)))
+        Action secondStage1 = drive.actionBuilder(new Pose2d(5, -40, Math.toRadians(90)))
                 .strafeToLinearHeading(new Vector2d(40, -40), Math.toRadians(270))
                 .waitSeconds(0.1)
                 .build();
@@ -80,7 +273,7 @@ public class specimenOpMode extends LinearOpMode {
         // Move forward to collect specimen from human player.
 
         Action secondStage3 = drive.actionBuilder(new Pose2d(40, -40, Math.toRadians(270)))
-                .strafeToLinearHeading(new Vector2d(0, -58), Math.toRadians(90))
+                .strafeToLinearHeading(new Vector2d(0, -40), Math.toRadians(90))
                 .waitSeconds(0.1)
                 .build();
         // return to border wall.
@@ -88,7 +281,7 @@ public class specimenOpMode extends LinearOpMode {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-        Action thirdStage1 = drive.actionBuilder(new Pose2d(0, -58, Math.toRadians(90)))
+        Action thirdStage1 = drive.actionBuilder(new Pose2d(0, -40, Math.toRadians(90)))
                 .strafeToLinearHeading(new Vector2d(40, -40), Math.toRadians(270))
                 .waitSeconds(0.1)
                 .build();
@@ -101,11 +294,19 @@ public class specimenOpMode extends LinearOpMode {
         // Move forward to collect specimen from human player.
 
         Action thirdStage3 = drive.actionBuilder(new Pose2d(40, -40, Math.toRadians(270)))
-                .strafeToLinearHeading(new Vector2d(-5, -58), Math.toRadians(90))
+                .strafeToLinearHeading(new Vector2d(-5, -40), Math.toRadians(90))
                 .waitSeconds(0.1)
                 .build();
         // return to border wall.
         // Third specimen stage.
+
+        // ----------------------------------------------------------------------------------------------------------------------------
+
+        Actions.runBlocking(claw.initClaw());
+        Actions.runBlocking(pivot.initPivot());
+        Actions.runBlocking(slide.slideDown());
+
+
 
         // Open the camera asynchronously to avoid blocking the thread
         webcam1.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
@@ -126,14 +327,17 @@ public class specimenOpMode extends LinearOpMode {
         while (opModeIsActive()) {
             // Add any logic or telemetry here to monitor pipeline results
             telemetry.addData("Frame Count", webcam1.getFrameCount());
-            telemetry.addData("FPS", String.format("%.2f", webcam1.getFps()));
+            telemetry.addData("FPS", String.format(Locale.US,"%.2f", webcam1.getFps()));
             telemetry.update();
 
             // Sets movement logic into action
             if (!pathFinished) {
                 Actions.runBlocking(firstStage1);
+                sleep(200);
                 Actions.runBlocking(firstStage2);
+                sleep(200);
                 Actions.runBlocking(firstStage3);
+                sleep(200);
                 pathFinished = true;
             } else {
                 webcam1.stopStreaming();
@@ -141,29 +345,5 @@ public class specimenOpMode extends LinearOpMode {
             }
         }
 
-    }
-    public class HangSpecimen implements Action {
-        private final Slide slide;
-        private final Claw claw;
-        private final Pivot pivot;
-        private final int slidePosition;
-        private final double slidePower = 0.5;
-
-        public HangSpecimen(Slide slide, Claw claw, Pivot pivot, int slidePosition) {
-            this.slide = slide;
-            this.claw = claw;
-            this.pivot = pivot;
-            this.slidePosition = slidePosition;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket packet) {
-            pivot.pivotToPosition(-300, 0.75, 5);
-            slide.moveToPosition(700, 0.75);
-            return false;
-        }
-    }
-    public Action HangSpecimen(Slide slide, Claw claw, Pivot pivot, int slidePosition) {
-        return new specimenOpMode().HangSpecimen(slide, claw, pivot, slidePosition);
     }
 }
