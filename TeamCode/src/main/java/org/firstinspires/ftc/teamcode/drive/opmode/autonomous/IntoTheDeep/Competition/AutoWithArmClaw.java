@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.drive.opmode.autonomous.IntoTheDeep.Competition;
+/*package org.firstinspires.ftc.teamcode.drive.opmode.autonomous.IntoTheDeep.Competition;
 
 import androidx.annotation.NonNull;
 
@@ -80,4 +80,4 @@ public class AutoWithArmClaw extends LinearOpMode {
     public Action HangSpecimen(Slide slide, Claw claw, Pivot pivot, int slidePosition) {
         return new HangSpecimen(slide, claw, pivot, slidePosition);
     }
-}
+} *\

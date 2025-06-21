@@ -110,22 +110,22 @@ public class specimenOpMode extends LinearOpMode {
 
     // claw class
     public static class Claw {
-        private final Servo rightGripServo;
-        private final Servo leftGripServo;
+        private final Servo rightClaw;
+        private final Servo leftClaw;
 
         public Claw(HardwareMap hardwareMap, Telemetry telemetryClaw) {
-            rightGripServo = hardwareMap.get(Servo.class, "rightGripServo");
-            leftGripServo = hardwareMap.get(Servo.class,"leftGripServo");
+            rightClaw = hardwareMap.get(Servo.class, "rightGripServo");
+            leftClaw = hardwareMap.get(Servo.class,"leftGripServo");
 
-            rightGripServo.setDirection(Servo.Direction.FORWARD);
-            leftGripServo.setDirection(Servo.Direction.REVERSE);
+            rightClaw.setDirection(Servo.Direction.FORWARD);
+            leftClaw.setDirection(Servo.Direction.REVERSE);
         }
 
         public class CloseClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                rightGripServo.setPosition(0.55);
-                leftGripServo.setPosition(0.55);
+                rightClaw.setPosition(0.55);
+                leftClaw.setPosition(0.55);
                 return false;
             }
         }
@@ -136,8 +136,8 @@ public class specimenOpMode extends LinearOpMode {
         public class OpenClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                rightGripServo.setPosition(1.0);
-                leftGripServo.setPosition(1.0);
+                rightClaw.setPosition(1.0);
+                leftClaw.setPosition(1.0);
                 return false;
             }
         }
@@ -150,8 +150,8 @@ public class specimenOpMode extends LinearOpMode {
         public class InitClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                rightGripServo.setPosition(2.0);
-                leftGripServo.setPosition(2);
+                rightClaw.setPosition(2.0);
+                leftClaw.setPosition(2);
                 return false;
             }
         }
@@ -163,16 +163,16 @@ public class specimenOpMode extends LinearOpMode {
     // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // setting up pivot motors
     public static class Pivot {
-        private final DcMotorEx rightPivot;
-        private final DcMotorEx leftPivot;
+        private final DcMotorEx rightSlidePivot;
+        private final DcMotorEx leftSlidePivot;
         public Pivot(HardwareMap hardwareMap, Telemetry telemetryPivot) {
-            rightPivot = hardwareMap.get(DcMotorEx.class, "rightPivot");
-            leftPivot = hardwareMap.get(DcMotorEx.class,"leftPivot");
+            rightSlidePivot = hardwareMap.get(DcMotorEx.class, "rightSlidePivot");
+            leftSlidePivot = hardwareMap.get(DcMotorEx.class,"leftSlidePivot");
 
-            rightPivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            rightPivot.setDirection(DcMotorSimple.Direction.FORWARD);
-            leftPivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            leftPivot.setDirection(DcMotorSimple.Direction.REVERSE);
+            rightSlidePivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            rightSlidePivot.setDirection(DcMotorSimple.Direction.FORWARD);
+            leftSlidePivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            leftSlidePivot.setDirection(DcMotorSimple.Direction.REVERSE);
 
         }
         public class InitPivot implements Action {
@@ -181,20 +181,20 @@ public class specimenOpMode extends LinearOpMode {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (!initialized) {
-                    rightPivot.setPower(0.8);
-                    leftPivot.setPower(0.8);
+                    rightSlidePivot.setPower(0.8);
+                    leftSlidePivot.setPower(0.8);
                     initialized = true;
                 }
 
-                double rightPivotCurrentPosition = rightPivot.getCurrentPosition();
-                double leftPivotCurrentPosition = leftPivot.getCurrentPosition();
+                double rightPivotCurrentPosition = rightSlidePivot.getCurrentPosition();
+                double leftPivotCurrentPosition = leftSlidePivot.getCurrentPosition();
                 packet.put("rightPivotPos", rightPivotCurrentPosition);
                 packet.put("leftPivotPos", leftPivotCurrentPosition);
                 if (rightPivotCurrentPosition < 3000 && rightPivotCurrentPosition > 2000 && leftPivotCurrentPosition < 3000.0 && leftPivotCurrentPosition > 2000) {
                     return true;
                 } else {
-                    rightPivot.setPower(0);
-                    leftPivot.setPower(0);
+                    rightSlidePivot.setPower(0);
+                    leftSlidePivot.setPower(0);
                     return false;
                 }
             }

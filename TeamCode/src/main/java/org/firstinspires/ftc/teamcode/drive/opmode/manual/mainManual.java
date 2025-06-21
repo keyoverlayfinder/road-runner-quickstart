@@ -114,12 +114,12 @@ public class mainManual extends OpMode{
         double rightClawPosition = rightClaw.getPosition();
 
         if (gamepad2.right_bumper) {
-            leftClawPosition = Math.min(leftClawPosition + movementStep, openPos);
-            rightClawPosition = Math.min(rightClawPosition + movementStep, openPos);
+            leftClawPosition = Math.min(leftClawPosition - movementStep, closedPos);
+            rightClawPosition = Math.min(rightClawPosition - movementStep, closedPos);
         }
         else {
-            leftClawPosition = Math.max(leftClawPosition - movementStep, closedPos);
-            rightClawPosition = Math.max(rightClawPosition - movementStep, closedPos);
+            leftClawPosition = Math.max(leftClawPosition + movementStep, openPos);
+            rightClawPosition = Math.max(rightClawPosition + movementStep, openPos);
         }
 
         leftClaw.setPosition(leftClawPosition);
