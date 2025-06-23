@@ -80,4 +80,4 @@ public class AutoWithArmClaw extends LinearOpMode {
     public Action HangSpecimen(Slide slide, Claw claw, Pivot pivot, int slidePosition) {
         return new HangSpecimen(slide, claw, pivot, slidePosition);
     }
-} *\
+} */

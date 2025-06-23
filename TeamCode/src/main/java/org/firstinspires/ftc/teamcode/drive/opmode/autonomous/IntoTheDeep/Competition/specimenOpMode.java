@@ -114,8 +114,8 @@ public class specimenOpMode extends LinearOpMode {
         private final Servo leftClaw;
 
         public Claw(HardwareMap hardwareMap, Telemetry telemetryClaw) {
-            rightClaw = hardwareMap.get(Servo.class, "rightGripServo");
-            leftClaw = hardwareMap.get(Servo.class,"leftGripServo");
+            rightClaw = hardwareMap.get(Servo.class, "rightClaw");
+            leftClaw = hardwareMap.get(Servo.class,"leftClaw");
 
             rightClaw.setDirection(Servo.Direction.FORWARD);
             leftClaw.setDirection(Servo.Direction.REVERSE);
@@ -136,8 +136,8 @@ public class specimenOpMode extends LinearOpMode {
         public class OpenClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                rightClaw.setPosition(1.0);
-                leftClaw.setPosition(1.0);
+                rightClaw.setPosition(.75);
+                leftClaw.setPosition(.75);
                 return false;
             }
         }
@@ -150,8 +150,8 @@ public class specimenOpMode extends LinearOpMode {
         public class InitClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                rightClaw.setPosition(2.0);
-                leftClaw.setPosition(2);
+                rightClaw.setPosition(1);
+                leftClaw.setPosition(1);
                 return false;
             }
         }
@@ -190,11 +190,13 @@ public class specimenOpMode extends LinearOpMode {
                 double leftPivotCurrentPosition = leftSlidePivot.getCurrentPosition();
                 packet.put("rightPivotPos", rightPivotCurrentPosition);
                 packet.put("leftPivotPos", leftPivotCurrentPosition);
-                if (rightPivotCurrentPosition < 3000 && rightPivotCurrentPosition > 2000 && leftPivotCurrentPosition < 3000.0 && leftPivotCurrentPosition > 2000) {
-                    return true;
-                } else {
+                if (rightPivotCurrentPosition < 5100 && rightPivotCurrentPosition > 5000 && leftPivotCurrentPosition < -2000 && leftPivotCurrentPosition > -2100) {
                     rightSlidePivot.setPower(0);
                     leftSlidePivot.setPower(0);
+                    return true;
+                } else {
+                    rightSlidePivot.setPower(-0.8);
+                    leftSlidePivot.setPower(0.8);
                     return false;
                 }
             }
