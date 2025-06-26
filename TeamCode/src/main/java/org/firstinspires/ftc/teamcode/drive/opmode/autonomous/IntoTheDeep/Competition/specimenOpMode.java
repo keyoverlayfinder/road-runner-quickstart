@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 
@@ -35,9 +36,10 @@ public class specimenOpMode extends LinearOpMode {
 
     // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     // lift class
-    public static class Slide {
+    public class Slide {
         private final DcMotorEx rightSlide;
         private final DcMotorEx leftSlide;
+
         public Slide(HardwareMap hardwareMap, Telemetry telemetrySlide) {
             rightSlide = hardwareMap.get(DcMotorEx.class, "rightSlide");
             rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -46,6 +48,12 @@ public class specimenOpMode extends LinearOpMode {
             leftSlide = hardwareMap.get(DcMotorEx.class, "leftSlide");
             leftSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             leftSlide.setDirection(DcMotorSimple.Direction.REVERSE);
+
+            rightSlide.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+            rightSlide.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+
+            leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            leftSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
 
         public class SlideUp implements Action {
@@ -54,8 +62,6 @@ public class specimenOpMode extends LinearOpMode {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (!initialized) {
-                    rightSlide.setPower(0.8);
-                    leftSlide.setPower(0.8);
                     initialized = true;
                 }
 
@@ -63,7 +69,9 @@ public class specimenOpMode extends LinearOpMode {
                 double leftSlideCurrentPosition = leftSlide.getCurrentPosition();
                 packet.put("rightSlidePos", rightSlideCurrentPosition);
                 packet.put("leftSlidePos", leftSlideCurrentPosition);
-                if (rightSlideCurrentPosition < 3000.0 && leftSlideCurrentPosition < 3000) {
+                if (rightSlideCurrentPosition > -1200) {
+                    rightSlide.setPower(0.8);
+                    leftSlide.setPower(-0.8);
                     return true;
                 } else {
                     rightSlide.setPower(0);
@@ -73,8 +81,38 @@ public class specimenOpMode extends LinearOpMode {
 
             }
         }
+
         public Action slideUp() {
             return new SlideUp();
+        }
+
+        public class GroundSlide implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    initialized = true;
+                }
+
+                double slideRightCurrentPosition = rightSlide.getCurrentPosition();
+                double slideLeftCurrentPosition = leftSlide.getCurrentPosition();
+                packet.put("slideRightPos", slideRightCurrentPosition);
+                packet.put("slideLeftPos", slideLeftCurrentPosition);
+                if (slideLeftCurrentPosition < 1200) {
+                    rightSlide.setPower(0.8);
+                    leftSlide.setPower(-0.8);
+                    return true;
+                } else {
+                    rightSlide.setPower(0);
+                    leftSlide.setPower(0);
+                    return false;
+                }
+            }
+        }
+
+        public Action groundSlide() {
+            return new GroundSlide();
         }
 
         public class SlideDown implements Action {
@@ -83,8 +121,6 @@ public class specimenOpMode extends LinearOpMode {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (!initialized) {
-                    rightSlide.setPower(-0.8);
-                    leftSlide.setPower(-0.8);
                     initialized = true;
                 }
 
@@ -92,30 +128,144 @@ public class specimenOpMode extends LinearOpMode {
                 double slideLeftCurrentPosition = leftSlide.getCurrentPosition();
                 packet.put("slideRightPos", slideRightCurrentPosition);
                 packet.put("slideLeftPos", slideLeftCurrentPosition);
-                if (slideRightCurrentPosition > 100.0 && slideLeftCurrentPosition > 100) {
-                    return true;
-                } else {
+                if (slideRightCurrentPosition > -100.0) {
                     rightSlide.setPower(0);
                     leftSlide.setPower(0);
+                    return true;
+                } else {
+                    rightSlide.setPower(0.8);
+                    leftSlide.setPower(-0.8);
                     return false;
                 }
             }
         }
-        public Action slideDown(){
+
+        public Action slideDown() {
             return new SlideDown();
         }
     }
 
-    // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------
+// setting up pivot motors
+    public class Pivot {
+        private final DcMotorEx rightSlidePivot;
+        private final DcMotorEx leftSlidePivot;
+
+        public Pivot(HardwareMap hardwareMap, Telemetry telemetryPivot) {
+            rightSlidePivot = hardwareMap.get(DcMotorEx.class, "rightSlidePivot");
+            leftSlidePivot = hardwareMap.get(DcMotorEx.class, "leftSlidePivot");
+
+            rightSlidePivot.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+            rightSlidePivot.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+
+            leftSlidePivot.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            leftSlidePivot.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            rightSlidePivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            rightSlidePivot.setDirection(DcMotorSimple.Direction.FORWARD);
+            leftSlidePivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            leftSlidePivot.setDirection(DcMotorSimple.Direction.REVERSE);
+        }
+
+        public class InitPivot implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    initialized = true;
+                }
+
+                double rightPivotAbsolutePosition = (rightSlidePivot.getCurrentPosition());
+                double leftPivotAbsolutePosition = (leftSlidePivot.getCurrentPosition());
+                packet.put("rightPivotPos", rightPivotAbsolutePosition);
+                packet.put("leftPivotPos", leftPivotAbsolutePosition);
+
+                if (rightPivotAbsolutePosition > -500) {
+                    rightSlidePivot.setPower(0.8);
+                    leftSlidePivot.setPower(-0.8);
+                    return true;
+                } else {
+                    rightSlidePivot.setPower(0);
+                    leftSlidePivot.setPower(0);
+                    return false;
+                }
+            }
+        }
+
+        public Action initPivot() {
+            return new InitPivot();
+        }
+
+        public class GroundPivot implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    initialized = true;
+                }
+
+                double rightPivotAbsolutePosition = (rightSlidePivot.getCurrentPosition());
+                double leftPivotAbsolutePosition = (leftSlidePivot.getCurrentPosition());
+                packet.put("rightPivotPos", rightPivotAbsolutePosition);
+                packet.put("leftPivotPos", leftPivotAbsolutePosition);
+
+                if (rightPivotAbsolutePosition > -5750) {
+                    rightSlidePivot.setPower(0.8);
+                    leftSlidePivot.setPower(-0.8);
+                    return true;
+                } else {
+                    rightSlidePivot.setPower(0);
+                    leftSlidePivot.setPower(0);
+                    return false;
+                }
+            }
+        }
+
+        public Action groundPivot() {
+            return new GroundPivot();
+        }
+
+
+        public class SpecimenPivot implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    initialized = true;
+                }
+
+                double rightPivotAbsolutePosition = (rightSlidePivot.getCurrentPosition());
+                double leftPivotAbsolutePosition = (leftSlidePivot.getCurrentPosition());
+                packet.put("rightPivotPos", rightPivotAbsolutePosition);
+                packet.put("leftPivotPos", leftPivotAbsolutePosition);
+
+                if (rightPivotAbsolutePosition > -3500) {
+                    rightSlidePivot.setPower(0.8);
+                    leftSlidePivot.setPower(-0.8);
+                    return true;
+                } else {
+                    rightSlidePivot.setPower(0);
+                    leftSlidePivot.setPower(0);
+                    return false;
+                }
+            }
+        }
+        public Action specimenPivot() {
+            return new SpecimenPivot();
+        }
+    }
 
     // claw class
-    public static class Claw {
+    public class Claw {
         private final Servo rightClaw;
         private final Servo leftClaw;
 
         public Claw(HardwareMap hardwareMap, Telemetry telemetryClaw) {
             rightClaw = hardwareMap.get(Servo.class, "rightClaw");
-            leftClaw = hardwareMap.get(Servo.class,"leftClaw");
+            leftClaw = hardwareMap.get(Servo.class, "leftClaw");
 
             rightClaw.setDirection(Servo.Direction.FORWARD);
             leftClaw.setDirection(Servo.Direction.REVERSE);
@@ -124,13 +274,14 @@ public class specimenOpMode extends LinearOpMode {
         public class CloseClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                rightClaw.setPosition(0.55);
-                leftClaw.setPosition(0.55);
+                rightClaw.setPosition(0.25);
+                leftClaw.setPosition(0.25);
                 return false;
             }
         }
+
         public Action closeClaw() {
-            return new CloseClaw();
+            return new Claw.CloseClaw();
         }
 
         public class OpenClaw implements Action {
@@ -138,94 +289,47 @@ public class specimenOpMode extends LinearOpMode {
             public boolean run(@NonNull TelemetryPacket packet) {
                 rightClaw.setPosition(.75);
                 leftClaw.setPosition(.75);
-                return false;
+                return true;
             }
         }
 
         public Action openClaw() {
-            return new OpenClaw();
+            return new Claw.OpenClaw();
         }
 
-       // InitClaw makes the claw go as wide as possible so that we fit within 18 x 18 x 18 box when initialized, but avoids interference with normal game.
+        // InitClaw makes the claw go as wide as possible so that we fit within 18 x 18 x 18 box when initialized, but avoids interference with normal game.
         public class InitClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                rightClaw.setPosition(1);
-                leftClaw.setPosition(1);
+                rightClaw.setPosition(.8);
+                leftClaw.setPosition(.8);
                 return false;
             }
         }
+
         public Action initClaw() {
             return new InitClaw();
         }
     }
 
-    // ---------------------------------------------------------------------------------------------------------------------------------------------------
-// setting up pivot motors
-    public static class Pivot {
-        private final DcMotorEx rightSlidePivot;
-        private final DcMotorEx leftSlidePivot;
-        public Pivot(HardwareMap hardwareMap, Telemetry telemetryPivot) {
-            rightSlidePivot = hardwareMap.get(DcMotorEx.class, "rightSlidePivot");
-            leftSlidePivot = hardwareMap.get(DcMotorEx.class,"leftSlidePivot");
-
-            rightSlidePivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            rightSlidePivot.setDirection(DcMotorSimple.Direction.FORWARD);
-            leftSlidePivot.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            leftSlidePivot.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        }
-        public class InitPivot implements Action {
-            private boolean initialized = false;
-
-            @Override
-            public boolean run(@NonNull TelemetryPacket packet) {
-                if (!initialized) {
-                    rightSlidePivot.setPower(0.8);
-                    leftSlidePivot.setPower(0.8);
-                    initialized = true;
-                }
-
-                double rightPivotCurrentPosition = rightSlidePivot.getCurrentPosition();
-                double leftPivotCurrentPosition = leftSlidePivot.getCurrentPosition();
-                packet.put("rightPivotPos", rightPivotCurrentPosition);
-                packet.put("leftPivotPos", leftPivotCurrentPosition);
-                if (rightPivotCurrentPosition < 5100 && rightPivotCurrentPosition > 5000 && leftPivotCurrentPosition < -2000 && leftPivotCurrentPosition > -2100) {
-                    rightSlidePivot.setPower(0);
-                    leftSlidePivot.setPower(0);
-                    return true;
-                } else {
-                    rightSlidePivot.setPower(-0.8);
-                    leftSlidePivot.setPower(0.8);
-                    return false;
-                }
-            }
-        }
-        public Action initPivot() {
-            return new InitPivot();
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     private boolean pathFinished = false;
-// Camera setup info
     OpenCvWebcam webcam1 = null;
-    itdBlobPipeline itdCam = new itdBlobPipeline(); // Refers to itdBlobPipeline for camera info
+    itdBlobPipeline itdCam = new itdBlobPipeline();
 
     int width = 1280, height = 720;
 
-    // -------------------------------------------------------------------------------------------------------------------------------------------------
-
     @Override
     public void runOpMode() throws InterruptedException {
+
         //Set up the claw
-        Claw claw = new Claw(hardwareMap, telemetry);
+        Claw claw = new specimenOpMode.Claw(hardwareMap, telemetry);
 
         //Set up the slides
         Slide slide = new Slide(hardwareMap, telemetry);
 
         //Set up the Pivots
-        Pivot pivot = new Pivot(hardwareMap, telemetry);
+        Pivot pivot = new specimenOpMode.Pivot(hardwareMap, telemetry);
 
         // Set up the webcam
         WebcamName webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
@@ -238,10 +342,15 @@ public class specimenOpMode extends LinearOpMode {
 
         // Set the camera's pipeline to the one you've created
         webcam1.setPipeline(itdCam);
+
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, -60, Math.toRadians(90)));
 
-        Action firstStage1 = drive.actionBuilder(new Pose2d(25, -60, Math.toRadians(90)))
-                .strafeToLinearHeading(new Vector2d(40, -40), Math.toRadians(270))
+        Action firstStage1 = drive.actionBuilder(new Pose2d(0, -60, Math.toRadians(90)))
+                .strafeTo(new Vector2d(55, -60))
+                .waitSeconds(0.1)
+                .strafeTo(new Vector2d(40,-60))
+                .waitSeconds(0.1)
+                .strafeToLinearHeading(new Vector2d(40,-40), Math.toRadians(270))
                 .waitSeconds(0.1)
                 .build();
         // Move to loading zone, and turn around
@@ -306,9 +415,6 @@ public class specimenOpMode extends LinearOpMode {
 
         Actions.runBlocking(claw.initClaw());
         Actions.runBlocking(pivot.initPivot());
-        Actions.runBlocking(slide.slideDown());
-
-
 
         // Open the camera asynchronously to avoid blocking the thread
         webcam1.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
@@ -322,30 +428,77 @@ public class specimenOpMode extends LinearOpMode {
             public void onError(int errorCode) {
                 telemetry.addData("Error", "Camera could not be opened: " + errorCode);
                 telemetry.update();
-            }});
+            }
+        });
 
         waitForStart();
 
         while (opModeIsActive()) {
             // Add any logic or telemetry here to monitor pipeline results
             telemetry.addData("Frame Count", webcam1.getFrameCount());
-            telemetry.addData("FPS", String.format(Locale.US,"%.2f", webcam1.getFps()));
+            telemetry.addData("FPS", String.format(Locale.US, "%.2f", webcam1.getFps()));
             telemetry.update();
 
             // Sets movement logic into action
             if (!pathFinished) {
-                Actions.runBlocking(firstStage1);
-                sleep(200);
-                Actions.runBlocking(firstStage2);
-                sleep(200);
-                Actions.runBlocking(firstStage3);
-                sleep(200);
+                Actions.runBlocking(
+                        new SequentialAction(
+                                firstStage1,
+                                claw.openClaw(),
+                                pivot.groundPivot(),
+                                slide.groundSlide(),
+                                firstStage2,
+                                claw.closeClaw(),
+                                pivot.initPivot(),
+                                firstStage3,
+                                pivot.specimenPivot(),
+                                slide.slideUp(),
+                                claw.initClaw(),
+                                slide.slideDown(),
+                                pivot.initPivot()
+                        )
+                );
+                
+                Actions.runBlocking(
+                        new SequentialAction(
+                                secondStage1,
+                                claw.openClaw(),
+                                pivot.groundPivot(),
+                                slide.groundSlide(),
+                                secondStage2,
+                                claw.closeClaw(),
+                                pivot.initPivot(),
+                                secondStage3,
+                                pivot.specimenPivot(),
+                                slide.slideUp(),
+                                claw.initClaw(),
+                                slide.slideDown(),
+                                pivot.initPivot()
+                        )
+                );
+
+                Actions.runBlocking(
+                        new SequentialAction(
+                                thirdStage1,
+                                claw.openClaw(),
+                                pivot.groundPivot(),
+                                slide.groundSlide(),
+                                thirdStage2,
+                                claw.closeClaw(),
+                                pivot.initPivot(),
+                                thirdStage3,
+                                pivot.specimenPivot(),
+                                slide.slideUp(),
+                                claw.initClaw(),
+                                slide.slideDown(),
+                                pivot.initPivot()
+                        )
+                );
                 pathFinished = true;
             } else {
                 webcam1.stopStreaming();
                 return;
             }
         }
-
     }
 }
