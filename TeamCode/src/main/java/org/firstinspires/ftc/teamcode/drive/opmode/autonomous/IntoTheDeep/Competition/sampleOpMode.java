@@ -31,8 +31,11 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import java.util.Locale;
 
 @Config
-@Autonomous(name="BlueAuto", group="competition")
-public class specimenOpMode extends LinearOpMode {
+@Autonomous(name="bucketAuto", group="competition")
+public class sampleOpMode extends LinearOpMode {
+    //constants for simple correction
+    final Pose2d bucketDropOffPose = new Pose2d(-51,-51, Math.toRadians(45));
+    final double sampleOffset = -45;
 
     // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     // lift class
@@ -69,7 +72,7 @@ public class specimenOpMode extends LinearOpMode {
                 double leftSlideCurrentPosition = leftSlide.getCurrentPosition();
                 packet.put("rightSlidePos", rightSlideCurrentPosition);
                 packet.put("leftSlidePos", leftSlideCurrentPosition);
-                if (rightSlideCurrentPosition > -1400) {
+                if (rightSlideCurrentPosition > -2400) {
                     rightSlide.setPower(0.8);
                     leftSlide.setPower(-0.8);
                     return true;
@@ -99,7 +102,7 @@ public class specimenOpMode extends LinearOpMode {
                 double slideLeftCurrentPosition = leftSlide.getCurrentPosition();
                 packet.put("slideRightPos", slideRightCurrentPosition);
                 packet.put("slideLeftPos", slideLeftCurrentPosition);
-                if (slideRightCurrentPosition > -1200) {
+                if (slideRightCurrentPosition > -2400) {
                     rightSlide.setPower(0.8);
                     leftSlide.setPower(-0.8);
                     return true;
@@ -128,13 +131,13 @@ public class specimenOpMode extends LinearOpMode {
                 double slideLeftCurrentPosition = leftSlide.getCurrentPosition();
                 packet.put("slideRightPos", slideRightCurrentPosition);
                 packet.put("slideLeftPos", slideLeftCurrentPosition);
-                if (slideRightCurrentPosition > -100.0) {
-                    rightSlide.setPower(0);
-                    leftSlide.setPower(0);
+                if (slideRightCurrentPosition < -100.0) {
+                    rightSlide.setPower(-0.8);
+                    leftSlide.setPower(0.8);
                     return true;
                 } else {
-                    rightSlide.setPower(0.8);
-                    leftSlide.setPower(-0.8);
+                    rightSlide.setPower(0);
+                    leftSlide.setPower(0);
                     return false;
                 }
             }
@@ -147,7 +150,7 @@ public class specimenOpMode extends LinearOpMode {
 
     // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // setting up pivot motors
-    public class Pivot {
+    public static class Pivot {
         private final DcMotorEx rightSlidePivot;
         private final DcMotorEx leftSlidePivot;
 
@@ -211,7 +214,7 @@ public class specimenOpMode extends LinearOpMode {
                 packet.put("rightPivotPos", rightPivotAbsolutePosition);
                 packet.put("leftPivotPos", leftPivotAbsolutePosition);
 
-                if (rightPivotAbsolutePosition > -6000) {
+                if (rightPivotAbsolutePosition > -5750) {
                     rightSlidePivot.setPower(0.8);
                     leftSlidePivot.setPower(-0.8);
                     return true;
@@ -228,7 +231,7 @@ public class specimenOpMode extends LinearOpMode {
         }
 
 
-        public class SpecimenPivot implements Action {
+        public class BucketPivot implements Action {
             private boolean initialized = false;
 
             @Override
@@ -242,7 +245,95 @@ public class specimenOpMode extends LinearOpMode {
                 packet.put("rightPivotPos", rightPivotAbsolutePosition);
                 packet.put("leftPivotPos", leftPivotAbsolutePosition);
 
-                if (rightPivotAbsolutePosition > -3500) {
+                if (rightPivotAbsolutePosition < -2200) {
+                    rightSlidePivot.setPower(-0.8);
+                    leftSlidePivot.setPower(0.8);
+                    return true;
+                } else {
+                    rightSlidePivot.setPower(0);
+                    leftSlidePivot.setPower(0);
+                    return false;
+                }
+            }
+        }
+        public Action bucketPivot() {
+            return new BucketPivot();
+        }
+
+        public class AscentPivot implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    initialized = true;
+                }
+
+                double rightPivotAbsolutePosition = (rightSlidePivot.getCurrentPosition());
+                double leftPivotAbsolutePosition = (leftSlidePivot.getCurrentPosition());
+                packet.put("rightPivotPos", rightPivotAbsolutePosition);
+                packet.put("leftPivotPos", leftPivotAbsolutePosition);
+
+                if (rightPivotAbsolutePosition > -2000) {
+                    rightSlidePivot.setPower(-0.8);
+                    leftSlidePivot.setPower(0.8);
+                    return true;
+                } else {
+                    rightSlidePivot.setPower(0);
+                    leftSlidePivot.setPower(0);
+                    return false;
+                }
+            }
+        }
+        public Action ascentPivot() {
+            return new AscentPivot();
+        }
+
+
+        public class UpPivotIn implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    initialized = true;
+                }
+
+                double rightPivotAbsolutePosition = (rightSlidePivot.getCurrentPosition());
+                double leftPivotAbsolutePosition = (leftSlidePivot.getCurrentPosition());
+                packet.put("rightPivotPos", rightPivotAbsolutePosition);
+                packet.put("leftPivotPos", leftPivotAbsolutePosition);
+
+                if (rightPivotAbsolutePosition < -2600) {
+                    rightSlidePivot.setPower(-0.8);
+                    leftSlidePivot.setPower(0.8);
+                    return true;
+                } else {
+                    rightSlidePivot.setPower(0);
+                    leftSlidePivot.setPower(0);
+                    return false;
+                }
+            }
+        }
+        public Action upPivotIn() {
+            return new UpPivotIn();
+        }
+
+        public class UpPivotOut implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    initialized = true;
+                }
+
+                double rightPivotAbsolutePosition = (rightSlidePivot.getCurrentPosition());
+                double leftPivotAbsolutePosition = (leftSlidePivot.getCurrentPosition());
+                packet.put("rightPivotPos", rightPivotAbsolutePosition);
+                packet.put("leftPivotPos", leftPivotAbsolutePosition);
+
+                if (rightPivotAbsolutePosition > -2600) {
                     rightSlidePivot.setPower(0.8);
                     leftSlidePivot.setPower(-0.8);
                     return true;
@@ -253,13 +344,14 @@ public class specimenOpMode extends LinearOpMode {
                 }
             }
         }
-        public Action specimenPivot() {
-            return new SpecimenPivot();
+
+        public Action upPivotOut(){
+            return new UpPivotOut();
         }
     }
 
     // claw class
-    public class Claw {
+    public static class Claw {
         private final Servo rightClaw;
         private final Servo leftClaw;
 
@@ -281,7 +373,7 @@ public class specimenOpMode extends LinearOpMode {
         }
 
         public Action closeClaw() {
-            return new Claw.CloseClaw();
+            return new CloseClaw();
         }
 
         public class OpenClaw implements Action {
@@ -294,15 +386,15 @@ public class specimenOpMode extends LinearOpMode {
         }
 
         public Action openClaw() {
-            return new Claw.OpenClaw();
+            return new OpenClaw();
         }
 
         // InitClaw makes the claw go as wide as possible so that we fit within 18 x 18 x 18 box when initialized, but avoids interference with normal game.
         public class InitClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                rightClaw.setPosition(.8);
-                leftClaw.setPosition(.8);
+                rightClaw.setPosition(.25);
+                leftClaw.setPosition(.25);
                 return false;
             }
         }
@@ -323,13 +415,13 @@ public class specimenOpMode extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         //Set up the claw
-        Claw claw = new specimenOpMode.Claw(hardwareMap, telemetry);
+        Claw claw = new Claw(hardwareMap, telemetry);
 
         //Set up the slides
         Slide slide = new Slide(hardwareMap, telemetry);
 
         //Set up the Pivots
-        Pivot pivot = new specimenOpMode.Pivot(hardwareMap, telemetry);
+        Pivot pivot = new Pivot(hardwareMap, telemetry);
 
         // Set up the webcam
         WebcamName webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
@@ -345,77 +437,58 @@ public class specimenOpMode extends LinearOpMode {
 
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, -60, Math.toRadians(90)));
 
-        Action firstStage1 = drive.actionBuilder(new Pose2d(0, -60, Math.toRadians(90)))
-                .strafeTo(new Vector2d(55, -60))
-                .waitSeconds(0.1)
-                .strafeTo(new Vector2d(40,-60))
-                .waitSeconds(0.1)
-                .strafeToLinearHeading(new Vector2d(40,-40), Math.toRadians(270))
+        Action firstStage1 = drive.actionBuilder(new Pose2d(-36, -60, Math.toRadians(90)))
+                .strafeToLinearHeading(bucketDropOffPose.position, bucketDropOffPose.heading)
                 .waitSeconds(0.1)
                 .build();
-        // Move to loading zone, and turn around
-
-        Action firstStage2 = drive.actionBuilder(new Pose2d(40, -40, Math.toRadians(270)))
-                .lineToY(-50)
-                .waitSeconds(0.1)
-                .build();
-        // Move forward to collect specimen from human player
-
-        Action firstStage3 = drive.actionBuilder(new Pose2d(40, -40, Math.toRadians(270)))
-                .strafeToLinearHeading(new Vector2d(5, -40), Math.toRadians(90))
-                .waitSeconds(0.1)
-                .build();
-        // Return to border wall.
-        // First specimen stage.
-        // Moves 1 - 3 consist of standard auto movement cycle.
+        // Move to bucket to deposit initial sample
+        // First specimen stage
 
 // ------------------------------------------------------------------------------------------------------------------------------
 
-        Action secondStage1 = drive.actionBuilder(new Pose2d(5, -40, Math.toRadians(90)))
-                .strafeToLinearHeading(new Vector2d(40, -40), Math.toRadians(270))
+        Action secondStage1 = drive.actionBuilder(bucketDropOffPose)
+                .strafeToLinearHeading(new Vector2d(-47.5, sampleOffset), Math.toRadians(90))
                 .waitSeconds(0.1)
                 .build();
-        // Move to loading zone, and turn around.
+        // Move from bucket to first ground sample
 
-        Action secondStage2 = drive.actionBuilder(new Pose2d(40, -40, Math.toRadians(270)))
-                .lineToY(-50)
+        Action secondStage2 = drive.actionBuilder(new Pose2d(-47.5, sampleOffset, Math.toRadians(90)))
+                .strafeToLinearHeading(bucketDropOffPose.position, bucketDropOffPose.heading)
                 .waitSeconds(0.1)
                 .build();
-        // Move forward to collect specimen from human player.
-
-        Action secondStage3 = drive.actionBuilder(new Pose2d(40, -40, Math.toRadians(270)))
-                .strafeToLinearHeading(new Vector2d(0, -40), Math.toRadians(90))
-                .waitSeconds(0.1)
-                .build();
-        // return to border wall.
-        // Second specimen stage.
+        // Move to bucket
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-        Action thirdStage1 = drive.actionBuilder(new Pose2d(0, -40, Math.toRadians(90)))
-                .strafeToLinearHeading(new Vector2d(40, -40), Math.toRadians(270))
+        Action thirdStage1 = drive.actionBuilder(bucketDropOffPose)
+                .strafeToLinearHeading(new Vector2d(-58, sampleOffset), Math.toRadians(90))
                 .waitSeconds(0.1)
                 .build();
-        // Move to loading zone, and turn around.
+        // Move from bucket to second ground sample
 
-        Action thirdStage2 = drive.actionBuilder(new Pose2d(40, -40, Math.toRadians(270)))
-                .lineToY(-50)
+        Action thirdStage2 = drive.actionBuilder(new Pose2d(-58, sampleOffset, Math.toRadians(90)))
+                .strafeToLinearHeading(bucketDropOffPose.position,bucketDropOffPose.heading)
                 .waitSeconds(0.1)
                 .build();
-        // Move forward to collect specimen from human player.
+        // Move to bucket
 
-        Action thirdStage3 = drive.actionBuilder(new Pose2d(40, -40, Math.toRadians(270)))
-                .strafeToLinearHeading(new Vector2d(-5, -40), Math.toRadians(90))
+// ----------------------------------------------------------------------------------------------------------------------------
+
+        Action fourthStage1 = drive.actionBuilder(bucketDropOffPose)
+                .strafeToLinearHeading(new Vector2d((-97 - sampleOffset),-25), Math.toRadians(180))
                 .waitSeconds(0.1)
                 .build();
-        // return to border wall.
-        // Third specimen stage.
-
-        Action park = drive.actionBuilder(new Pose2d(-5,-50, Math.toRadians(90)))
-                .strafeToLinearHeading(new Vector2d(56,-58), Math.toRadians(180))
+        //Move to third ground sample
+        Action fourthStage2 = drive.actionBuilder(new Pose2d(-52,-25,Math.toRadians(180)))
+                .strafeToSplineHeading(bucketDropOffPose.position,bucketDropOffPose.heading)
                 .build();
+        //Move to bucket
+        Action fourthStage3 = drive.actionBuilder(bucketDropOffPose)
+                .strafeToLinearHeading(new Vector2d(bucketDropOffPose.position.x,-12),Math.toRadians(90))
+                .strafeToLinearHeading(new Vector2d(-24,-12),Math.toRadians(180))
+                .build();
+        //Move to observation zone for ascent 1
 
-        // ----------------------------------------------------------------------------------------------------------------------------
 
         Actions.runBlocking(claw.initClaw());
         Actions.runBlocking(pivot.initPivot());
@@ -437,60 +510,86 @@ public class specimenOpMode extends LinearOpMode {
 
         waitForStart();
 
+        while (opModeIsActive()) {
+            // Add any logic or telemetry here to monitor pipeline results
+            telemetry.addData("Frame Count", webcam1.getFrameCount());
+            telemetry.addData("FPS", String.format(Locale.US, "%.2f", webcam1.getFps()));
+            telemetry.update();
+
             // Sets movement logic into action
-            Actions.runBlocking(
-                    new SequentialAction(
-                            firstStage1,
-                            claw.openClaw(),
-                            pivot.groundPivot(),
-                            slide.groundSlide(),
-                            firstStage2,
-                            claw.closeClaw(),
-                            pivot.initPivot(),
-                            firstStage3,
-                            pivot.specimenPivot(),
-                            slide.slideUp(),
-                            claw.initClaw(),
-                            slide.slideDown(),
-                            pivot.initPivot()
-                    )
-            );
+            if (!pathFinished) {
+                //initial sample
+                Actions.runBlocking(
+                        new SequentialAction(
+                                firstStage1,
+                                pivot.upPivotIn(),
+                                slide.slideUp(),
+                                pivot.bucketPivot(),
+                                claw.openClaw(),
+                                pivot.upPivotOut(),
+                                slide.slideDown()
+                        )
+                );
 
-            Actions.runBlocking(
-                    new SequentialAction(
-                            secondStage1,
-                            claw.openClaw(),
-                            pivot.groundPivot(),
-                            slide.groundSlide(),
-                            secondStage2,
-                            claw.closeClaw(),
-                            pivot.initPivot(),
-                            secondStage3,
-                            pivot.specimenPivot(),
-                            slide.slideUp(),
-                            claw.initClaw(),
-                            slide.slideDown(),
-                            pivot.initPivot()
-                    )
-            );
-
-            Actions.runBlocking(
-                    new SequentialAction(
-                            thirdStage1,
-                            claw.openClaw(),
-                            pivot.groundPivot(),
-                            slide.groundSlide(),
-                            thirdStage2,
-                            claw.closeClaw(),
-                            pivot.initPivot(),
-                            thirdStage3,
-                            pivot.specimenPivot(),
-                            slide.slideUp(),
-                            claw.initClaw(),
-                            slide.slideDown(),
-                            pivot.initPivot(),
-                            park
-                    )
-            );
-    }}
-
+                //first ground sample
+                Actions.runBlocking(
+                        new SequentialAction(
+                                secondStage1,
+                                pivot.groundPivot(),
+                                slide.groundSlide(),
+                                claw.closeClaw(),
+                                slide.slideDown(),
+                                pivot.upPivotIn(),
+                                secondStage2,
+                                slide.slideUp(),
+                                pivot.bucketPivot(),
+                                claw.openClaw(),
+                                pivot.upPivotOut(),
+                                slide.slideDown()
+                        )
+                );
+                //seconds ground sample
+                Actions.runBlocking(
+                        new SequentialAction(
+                                thirdStage1,
+                                pivot.groundPivot(),
+                                slide.groundSlide(),
+                                claw.closeClaw(),
+                                slide.slideDown(),
+                                pivot.upPivotIn(),
+                                thirdStage2,
+                                slide.slideUp(),
+                                pivot.bucketPivot(),
+                                claw.openClaw(),
+                                pivot.upPivotOut(),
+                                slide.slideDown()
+                        )
+                );
+                //third ground sample and park
+                Actions.runBlocking(
+                        new SequentialAction(
+                                fourthStage1,
+                                pivot.groundPivot(),
+                                slide.groundSlide(),
+                                claw.closeClaw(),
+                                slide.slideDown(),
+                                pivot.upPivotIn(),
+                                fourthStage2,
+                                slide.slideUp(),
+                                pivot.bucketPivot(),
+                                claw.openClaw(),
+                                pivot.upPivotOut(),
+                                slide.slideDown(),
+                                fourthStage3,
+                                slide.slideUp(),
+                                pivot.ascentPivot()
+                        )
+                );
+                pathFinished = true;
+            } else {
+                webcam1.stopStreaming();
+                return;
+            }
+        }
+    }
+}

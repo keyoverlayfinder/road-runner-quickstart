@@ -98,16 +98,16 @@ public class mainManual extends OpMode{
         double y = -gamepad1.left_stick_y;
         double rotInput = -gamepad1.right_stick_x;
 
-        leftFront.setPower((y + x - rotInput));
-        leftBack.setPower((-y + x + rotInput)); // -y
+        leftFront.setPower((y - x - rotInput)); // +x
+        leftBack.setPower((y + x + rotInput)); // -y
         rightFront.setPower((y + x + rotInput));
-        rightBack.setPower((y - x + rotInput));
+        rightBack.setPower((-y + x + rotInput));
 
         // Gamepad 2 controls the viperslides
         // Programming claw
         double closedPos = 0.65;
         double openPos = 0.42;
-        double movementStep = 0.01; // Step size
+        double movementStep = 0.1; // Step size
 
         // Variables to track current claw positions
         double leftClawPosition = leftClaw.getPosition();
@@ -166,7 +166,7 @@ public class mainManual extends OpMode{
 
         double vert = gamepad2.left_stick_y;
 
-        if (rightSlide.getCurrentPosition() < -2100){
+        if ((rightSlide.getCurrentPosition() < -1600)||(rightSlidePivot.getCurrentPosition() > -3000)){
             leftSlide.setPower(-0.8);
             rightSlide.setPower(0.8);
         } else {
