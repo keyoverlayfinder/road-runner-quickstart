@@ -166,8 +166,13 @@ public class mainManual extends OpMode{
 
         double vert = gamepad2.left_stick_y;
 
-        leftSlide.setPower(-vert);
-        rightSlide.setPower(vert);
+        if (rightSlide.getCurrentPosition() < -2100){
+            leftSlide.setPower(-0.8);
+            rightSlide.setPower(0.8);
+        } else {
+            leftSlide.setPower(-vert);
+            rightSlide.setPower(vert);
+        }
 
         telemetry.addData("Left Servo Position", leftClaw.getPosition());
         telemetry.addData("Right Servo Position", rightClaw.getPosition());

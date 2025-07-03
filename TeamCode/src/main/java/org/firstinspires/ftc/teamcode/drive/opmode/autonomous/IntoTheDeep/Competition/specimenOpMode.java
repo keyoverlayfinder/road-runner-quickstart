@@ -69,7 +69,7 @@ public class specimenOpMode extends LinearOpMode {
                 double leftSlideCurrentPosition = leftSlide.getCurrentPosition();
                 packet.put("rightSlidePos", rightSlideCurrentPosition);
                 packet.put("leftSlidePos", leftSlideCurrentPosition);
-                if (rightSlideCurrentPosition > -1200) {
+                if (rightSlideCurrentPosition > -1400) {
                     rightSlide.setPower(0.8);
                     leftSlide.setPower(-0.8);
                     return true;
@@ -99,7 +99,7 @@ public class specimenOpMode extends LinearOpMode {
                 double slideLeftCurrentPosition = leftSlide.getCurrentPosition();
                 packet.put("slideRightPos", slideRightCurrentPosition);
                 packet.put("slideLeftPos", slideLeftCurrentPosition);
-                if (slideLeftCurrentPosition < 1200) {
+                if (slideRightCurrentPosition > -1200) {
                     rightSlide.setPower(0.8);
                     leftSlide.setPower(-0.8);
                     return true;
@@ -211,7 +211,7 @@ public class specimenOpMode extends LinearOpMode {
                 packet.put("rightPivotPos", rightPivotAbsolutePosition);
                 packet.put("leftPivotPos", leftPivotAbsolutePosition);
 
-                if (rightPivotAbsolutePosition > -5750) {
+                if (rightPivotAbsolutePosition > -6000) {
                     rightSlidePivot.setPower(0.8);
                     leftSlidePivot.setPower(-0.8);
                     return true;
@@ -411,10 +411,15 @@ public class specimenOpMode extends LinearOpMode {
         // return to border wall.
         // Third specimen stage.
 
+        Action park = drive.actionBuilder(new Pose2d(-5,-50, Math.toRadians(90)))
+                .strafeToLinearHeading(new Vector2d(56,-58), Math.toRadians(180))
+                .build();
+
         // ----------------------------------------------------------------------------------------------------------------------------
 
         Actions.runBlocking(claw.initClaw());
-        Actions.runBlocking(pivot.initPivot());
+        Actions.runBlocking(pivot.groundPivot());
+        Actions.runBlocking(slide.groundSlide());
 
         // Open the camera asynchronously to avoid blocking the thread
         webcam1.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
@@ -458,7 +463,7 @@ public class specimenOpMode extends LinearOpMode {
                                 pivot.initPivot()
                         )
                 );
-                
+
                 Actions.runBlocking(
                         new SequentialAction(
                                 secondStage1,
@@ -491,7 +496,8 @@ public class specimenOpMode extends LinearOpMode {
                                 slide.slideUp(),
                                 claw.initClaw(),
                                 slide.slideDown(),
-                                pivot.initPivot()
+                                pivot.initPivot(),
+                                park
                         )
                 );
                 pathFinished = true;
