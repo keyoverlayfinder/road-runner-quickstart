@@ -102,7 +102,7 @@ public class sampleOpMode extends LinearOpMode {
                 double slideLeftCurrentPosition = leftSlide.getCurrentPosition();
                 packet.put("slideRightPos", slideRightCurrentPosition);
                 packet.put("slideLeftPos", slideLeftCurrentPosition);
-                if (slideRightCurrentPosition > -2400) {
+                if (slideRightCurrentPosition > -1600) {
                     rightSlide.setPower(0.8);
                     leftSlide.setPower(-0.8);
                     return true;
@@ -517,7 +517,7 @@ public class sampleOpMode extends LinearOpMode {
             telemetry.update();
 
             // Sets movement logic into action
-            if (!pathFinished) {
+            if (opModeIsActive()) {
                 //initial sample
                 Actions.runBlocking(
                         new SequentialAction(
@@ -585,10 +585,6 @@ public class sampleOpMode extends LinearOpMode {
                                 pivot.ascentPivot()
                         )
                 );
-                pathFinished = true;
-            } else {
-                webcam1.stopStreaming();
-                return;
             }
         }
     }

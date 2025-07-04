@@ -61,6 +61,8 @@ public class specimenOpMode extends LinearOpMode {
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
+                if (!opModeIsActive()) return false;
+
                 if (!initialized) {
                     initialized = true;
                 }
@@ -91,6 +93,8 @@ public class specimenOpMode extends LinearOpMode {
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
+                if (!opModeIsActive()) return false;
+
                 if (!initialized) {
                     initialized = true;
                 }
@@ -120,6 +124,8 @@ public class specimenOpMode extends LinearOpMode {
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
+                if (!opModeIsActive()) return false;
+
                 if (!initialized) {
                     initialized = true;
                 }
@@ -172,6 +178,8 @@ public class specimenOpMode extends LinearOpMode {
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
+                if (!opModeIsActive()) return false;
+
                 if (!initialized) {
                     initialized = true;
                 }
@@ -202,6 +210,8 @@ public class specimenOpMode extends LinearOpMode {
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
+                if (!opModeIsActive()) return false;
+
                 if (!initialized) {
                     initialized = true;
                 }
@@ -233,6 +243,8 @@ public class specimenOpMode extends LinearOpMode {
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
+                if (!opModeIsActive()) return false;
+
                 if (!initialized) {
                     initialized = true;
                 }
@@ -253,6 +265,7 @@ public class specimenOpMode extends LinearOpMode {
                 }
             }
         }
+
         public Action specimenPivot() {
             return new SpecimenPivot();
         }
@@ -274,6 +287,8 @@ public class specimenOpMode extends LinearOpMode {
         public class CloseClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
+                if (!opModeIsActive()) return false;
+
                 rightClaw.setPosition(0.25);
                 leftClaw.setPosition(0.25);
                 return false;
@@ -287,6 +302,8 @@ public class specimenOpMode extends LinearOpMode {
         public class OpenClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
+                if (!opModeIsActive()) return false;
+
                 rightClaw.setPosition(.75);
                 leftClaw.setPosition(.75);
                 return true;
@@ -301,6 +318,8 @@ public class specimenOpMode extends LinearOpMode {
         public class InitClaw implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
+                if (!opModeIsActive()) return false;
+
                 rightClaw.setPosition(.8);
                 leftClaw.setPosition(.8);
                 return false;
@@ -313,11 +332,6 @@ public class specimenOpMode extends LinearOpMode {
     }
 
     // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    private boolean pathFinished = false;
-    OpenCvWebcam webcam1 = null;
-    itdBlobPipeline itdCam = new itdBlobPipeline();
-
-    int width = 1280, height = 720;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -331,26 +345,15 @@ public class specimenOpMode extends LinearOpMode {
         //Set up the Pivots
         Pivot pivot = new specimenOpMode.Pivot(hardwareMap, telemetry);
 
-        // Set up the webcam
-        WebcamName webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
-        // The view ID is needed for displaying the camera feed in the FTC app
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-                "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-
-        // Initialize the webcam
-        webcam1 = OpenCvCameraFactory.getInstance().createWebcam(webcamName, cameraMonitorViewId);
-
-        // Set the camera's pipeline to the one you've created
-        webcam1.setPipeline(itdCam);
 
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, -60, Math.toRadians(90)));
 
         Action firstStage1 = drive.actionBuilder(new Pose2d(0, -60, Math.toRadians(90)))
                 .strafeTo(new Vector2d(55, -60))
                 .waitSeconds(0.1)
-                .strafeTo(new Vector2d(40,-60))
+                .strafeTo(new Vector2d(40, -60))
                 .waitSeconds(0.1)
-                .strafeToLinearHeading(new Vector2d(40,-40), Math.toRadians(270))
+                .strafeToLinearHeading(new Vector2d(40, -40), Math.toRadians(270))
                 .waitSeconds(0.1)
                 .build();
         // Move to loading zone, and turn around
@@ -411,8 +414,8 @@ public class specimenOpMode extends LinearOpMode {
         // return to border wall.
         // Third specimen stage.
 
-        Action park = drive.actionBuilder(new Pose2d(-5,-50, Math.toRadians(90)))
-                .strafeToLinearHeading(new Vector2d(56,-58), Math.toRadians(180))
+        Action park = drive.actionBuilder(new Pose2d(-5, -50, Math.toRadians(90)))
+                .strafeToLinearHeading(new Vector2d(56, -58), Math.toRadians(180))
                 .build();
 
         // ----------------------------------------------------------------------------------------------------------------------------
@@ -420,23 +423,8 @@ public class specimenOpMode extends LinearOpMode {
         Actions.runBlocking(claw.initClaw());
         Actions.runBlocking(pivot.initPivot());
 
-        // Open the camera asynchronously to avoid blocking the thread
-        webcam1.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
-            @Override
-            public void onOpened() {
-                // Start streaming in MJPEG format with a specified resolution
-                webcam1.startStreaming(width, height, OpenCvCameraRotation.SIDEWAYS_RIGHT, OpenCvWebcam.StreamFormat.MJPEG);
-            }
-
-            @Override
-            public void onError(int errorCode) {
-                telemetry.addData("Error", "Camera could not be opened: " + errorCode);
-                telemetry.update();
-            }
-        });
-
         waitForStart();
-
+        while (opModeIsActive()) {
             // Sets movement logic into action
             Actions.runBlocking(
                     new SequentialAction(
@@ -455,42 +443,79 @@ public class specimenOpMode extends LinearOpMode {
                             pivot.initPivot()
                     )
             );
-
             Actions.runBlocking(
-                    new SequentialAction(
-                            secondStage1,
-                            claw.openClaw(),
-                            pivot.groundPivot(),
-                            slide.groundSlide(),
-                            secondStage2,
-                            claw.closeClaw(),
-                            pivot.initPivot(),
-                            secondStage3,
-                            pivot.specimenPivot(),
-                            slide.slideUp(),
-                            claw.initClaw(),
-                            slide.slideDown(),
-                            pivot.initPivot()
-                    )
+                        new SequentialAction(
+                                secondStage1,
+                                claw.openClaw(),
+                                pivot.groundPivot(),
+                                slide.groundSlide(),
+                                secondStage2,
+                                claw.closeClaw(),
+                                pivot.initPivot(),
+                                secondStage3,
+                                pivot.specimenPivot(),
+                                slide.slideUp(),
+                                claw.initClaw(),
+                                slide.slideDown(),
+                                pivot.initPivot()
+                        )
+            );
+            Actions.runBlocking(
+                        new SequentialAction(
+                                thirdStage1,
+                                claw.openClaw(),
+                                pivot.groundPivot(),
+                                slide.groundSlide(),
+                                thirdStage2,
+                                claw.closeClaw(),
+                                pivot.initPivot(),
+                                thirdStage3,
+                                pivot.specimenPivot(),
+                                slide.slideUp(),
+                                claw.initClaw(),
+                                slide.slideDown(),
+                                pivot.initPivot(),
+                                park
+                            )
             );
 
-            Actions.runBlocking(
-                    new SequentialAction(
-                            thirdStage1,
-                            claw.openClaw(),
-                            pivot.groundPivot(),
-                            slide.groundSlide(),
-                            thirdStage2,
-                            claw.closeClaw(),
-                            pivot.initPivot(),
-                            thirdStage3,
-                            pivot.specimenPivot(),
-                            slide.slideUp(),
-                            claw.initClaw(),
-                            slide.slideDown(),
-                            pivot.initPivot(),
-                            park
-                    )
-            );
-    }}
+//            Actions.runBlocking(
+//                    new SequentialAction(
+//                            secondStage1,
+//                            claw.openClaw(),
+//                            pivot.groundPivot(),
+//                            slide.groundSlide(),
+//                            secondStage2,
+//                            claw.closeClaw(),
+//                            pivot.initPivot(),
+//                            secondStage3,
+//                            pivot.specimenPivot(),
+//                            slide.slideUp(),
+//                            claw.initClaw(),
+//                            slide.slideDown(),
+//                            pivot.initPivot()
+//                    )
+//            );
+//
+//            Actions.runBlocking(
+//                    new SequentialAction(
+//                            thirdStage1,
+//                            claw.openClaw(),
+//                            pivot.groundPivot(),
+//                            slide.groundSlide(),
+//                            thirdStage2,
+//                            claw.closeClaw(),
+//                            pivot.initPivot(),
+//                            thirdStage3,
+//                            pivot.specimenPivot(),
+//                            slide.slideUp(),
+//                            claw.initClaw(),
+//                            slide.slideDown(),
+//                            pivot.initPivot(),
+//                            park
+//                    )
+//            );
+        }
+    }
+}
 

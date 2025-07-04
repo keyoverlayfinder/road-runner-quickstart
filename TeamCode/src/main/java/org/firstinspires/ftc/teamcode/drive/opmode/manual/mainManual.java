@@ -98,10 +98,11 @@ public class mainManual extends OpMode{
         double y = -gamepad1.left_stick_y;
         double rotInput = -gamepad1.right_stick_x;
 
-        leftFront.setPower((y - x - rotInput)); // +x
-        leftBack.setPower((y + x + rotInput)); // -y
-        rightFront.setPower((y + x + rotInput));
-        rightBack.setPower((-y + x + rotInput));
+        // New update: reverse all x values and rotinputs
+        leftFront.setPower((y + x - rotInput));
+        leftBack.setPower((y - x - rotInput));
+        rightFront.setPower((y - x + rotInput));
+        rightBack.setPower((-y - x - rotInput));
 
         // Gamepad 2 controls the viperslides
         // Programming claw
